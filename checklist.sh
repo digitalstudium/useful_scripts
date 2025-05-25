@@ -139,6 +139,7 @@ current_selection=0
 total_items=${#display_items[@]}
 header_lines=4
 scroll_offset=0
+prev_scroll=0
 
 # Calculate how many items can fit on screen based on their actual line counts
 calculate_visible_items() {
@@ -166,6 +167,8 @@ calculate_visible_items() {
 
 # Calculate scroll position to keep current selection visible
 update_scroll() {
+    prev_scroll=$scroll_offset
+    
     # If current selection is before scroll window, scroll up
     if [ $current_selection -lt $scroll_offset ]; then
         scroll_offset=$current_selection
@@ -232,6 +235,86 @@ display_task() {
     done <<< "$task_content"
 }
 
+# Calculate the screen line position for an item
+get_item_screen_position() {
+    local item_index=$1
+    local screen_line=$((header_lines + 1))
+    
+    for (( i=scroll_offset; i<item_index; i++ )); do
+        local item="${display_items[$i]}"
+        local lines_needed=${item_line_counts["$item"]}
+        screen_line=$((screen_line + lines_needed))
+    done
+    
+    echo $screen_line
+}
+
+# Display a single item at a specific index
+display_item_at_index() {
+    local item_index=$1
+    local is_selected=$2
+    local item="${display_items[$item_index]}"
+    
+    if [[ $item =~ ^CATEGORY:(.+)$ ]]; then
+        local category="${BASH_REMATCH[1]}"
+        if [ "$is_selected" = true ]; then
+            printf '\033[7m@%s\033[0m\n' "$category"
+        else
+            printf '@%s\n' "$category"
+        fi
+        echo  # Empty line after category
+    elif [[ $item =~ ^TASK:(.+)$ ]]; then
+        local task_key="${BASH_REMATCH[1]}"
+        display_task "$task_key" "$is_selected"
+        echo  # Empty line after task
+    fi
+}
+
+# Clear lines for an item
+clear_item_lines() {
+    local item_index=$1
+    local item="${display_items[$item_index]}"
+    local lines_needed=${item_line_counts["$item"]}
+    
+    for (( i=0; i<lines_needed; i++ )); do
+        printf '\033[K\n'  # Clear line and move to next
+    done
+}
+
+# Update selection display without full refresh
+update_selection_display() {
+    local old_selection=$1
+    local new_selection=$2
+    
+    # If scroll position changed, do full refresh
+    if [ $scroll_offset != $prev_scroll ]; then
+        full_display
+        return
+    fi
+    
+    # Check if both items are visible on screen
+    local visible_start=$scroll_offset
+    local visible_end=$((scroll_offset + max_visible_items))
+    
+    if [ $old_selection -ge $visible_start ] && [ $old_selection -lt $visible_end ]; then
+        # Redraw old position (unhighlighted)
+        local old_screen_pos=$(get_item_screen_position $old_selection)
+        move_cursor $old_screen_pos 1
+        clear_item_lines $old_selection
+        move_cursor $old_screen_pos 1
+        display_item_at_index $old_selection false
+    fi
+    
+    if [ $new_selection -ge $visible_start ] && [ $new_selection -lt $visible_end ]; then
+        # Redraw new position (highlighted)
+        local new_screen_pos=$(get_item_screen_position $new_selection)
+        move_cursor $new_screen_pos 1
+        clear_item_lines $new_selection
+        move_cursor $new_screen_pos 1
+        display_item_at_index $new_selection true
+    fi
+}
+
 # Full display refresh
 full_display() {
     clear_screen
@@ -258,19 +341,7 @@ full_display() {
     fi
     
     for (( i=scroll_offset; i<visible_end; i++ )); do
-        item="${display_items[$i]}"
-        if [[ $item =~ ^CATEGORY:(.+)$ ]]; then
-            category="${BASH_REMATCH[1]}"
-            if [ $i -eq $current_selection ]; then
-                printf '\033[7m@%s\033[0m\n' "$category"
-            else
-                printf '@%s\n' "$category"
-            fi
-        elif [[ $item =~ ^TASK:(.+)$ ]]; then
-            task_key="${BASH_REMATCH[1]}"
-            display_task "$task_key" $([ $i -eq $current_selection ] && echo "true" || echo "false")
-        fi
-        echo  # Empty line after each item
+        display_item_at_index $i $([ $i -eq $current_selection ] && echo "true" || echo "false")
     done
 }
 
@@ -300,22 +371,18 @@ while true; do
         case $input in
             '[A')  # Up arrow
                 if [ $current_selection -gt 0 ]; then
+                    old_selection=$current_selection
                     ((current_selection--))
-                    prev_scroll=$scroll_offset
                     update_scroll
-                    
-                    # Always do full refresh for multi-line content
-                    full_display
+                    update_selection_display $old_selection $current_selection
                 fi
                 ;;
             '[B')  # Down arrow
                 if [ $current_selection -lt $((total_items - 1)) ]; then
+                    old_selection=$current_selection
                     ((current_selection++))
-                    prev_scroll=$scroll_offset
                     update_scroll
-                    
-                    # Always do full refresh for multi-line content
-                    full_display
+                    update_selection_display $old_selection $current_selection
                 fi
                 ;;
             '[5~') # Page Up
@@ -348,8 +415,12 @@ while true; do
             else
                 checked["$task_key"]=true
             fi
-            # Full refresh to update checkbox properly
-            full_display
+            # Redraw just the current item to update checkbox
+            local screen_pos=$(get_item_screen_position $current_selection)
+            move_cursor $screen_pos 1
+            clear_item_lines $current_selection
+            move_cursor $screen_pos 1
+            display_item_at_index $current_selection true
         fi
     elif [[ $input == 'q' ]] || [[ $input == 'Q' ]]; then
         # Quit - cleanup will be called by trap
@@ -361,5 +432,4 @@ while true; do
         full_display
     fi
 done
-
 
