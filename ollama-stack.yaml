@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: always
+    deploy:
+      replicas: 1
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            capabilities: ["compute", "gpu", "utility", "graphics"]
+            count: all  # Adjust count for the number of GPUs you want to use        
+    ports:
+      - 11434:11434
+    volumes:
+      - ollama:/root/.ollama
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    restart: always
+    ports:
+      - 3000:8080
+    volumes:
+      - open-webui:/app/backend/data
+    environment:
+      - 'OLLAMA_BASE_URL=http://ollama:11434'
+
+volumes:
+  ollama: {}
+  open-webui: {}
+

@@ -1,0 +1,17 @@
+version: '3.9'
+
+services:
+  sd:
+    image: goolashe/automatic1111-sd-webui
+    ports:
+      - "${WEBUI_PORT:-7860}:7860"
+    stop_signal: SIGKILL
+    tty: true
+    environment:
+      - CLI_ARGS=--allow-code --medvram --xformers --enable-insecure-extension-access --api      
+    volumes:
+      - sd-data:/data
+      - sd-output:/output      
+volumes:
+  sd-data: {}
+  sd-output: {}
