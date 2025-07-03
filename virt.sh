@@ -1,0 +1,1 @@
+for i in {1..6}; do   sudo virt-install     --name ubuntu-vm-$i     --memory 2048     --vcpus 2     --disk size=10,format=qcow2,path=/var/lib/libvirt/images/ubuntu-vm-$i.qcow2     --cdrom $HOME/Downloads/ubuntu-24.04.1-live-server-amd64.iso     --os-variant ubuntu22.04     --network network=default     --graphics vnc,listen=0.0.0.0     --noautoconsole; done
