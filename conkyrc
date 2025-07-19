@@ -1,0 +1,32 @@
+background no
+out_to_x no
+out_to_console yes
+update_interval 1
+total_run_times 0
+use_spacer none
+short_units yes
+if_up_strictness address
+
+# Enable color output for i3bar (pango markup)
+format_human_readable yes
+template0 ${if_match ${battery_percent BAT0} < 20}${battery_percent BAT0}%${else}${battery_percent BAT0}%${endif}
+
+TEXT
+# Network
+|  ${if_up wlp3s0}${downspeed wlp3s0}↓ ${upspeed wlp3s0}↑ ${wireless_essid wlp3s0}${else}No WiFi${endif} \
+# Battery
+|   ${battery_percent BAT0}% \
+# CPU
+|  ${cpu cpu0}% \
+# RAM
+|  ${mem}/${memmax} \
+# Disk
+|  ${fs_free /}/${fs_size /} \
+# Volume
+|  ${exec amixer get Master | awk -F'[][]' '/%/ {print $2}' | head -n1} \
+# Microphone
+|  ${exec amixer get Capture | grep -o '[0-9]*%' | head -n1} \
+# Date
+|  ${time %a, %d %b} \
+# Time
+|  ${time %H:%M:%S}
