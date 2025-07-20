@@ -9,7 +9,6 @@ if_up_strictness address
 
 # Enable color output for i3bar (pango markup)
 format_human_readable yes
-template0 ${if_match ${battery_percent BAT0} < 20}${battery_percent BAT0}%${else}${battery_percent BAT0}%${endif}
 
 TEXT
 # Network
@@ -26,7 +25,10 @@ TEXT
 |  ${exec amixer get Master | awk -F'[][]' '/%/ {print $2}' | head -n1} \
 # Microphone
 |  ${exec amixer get Capture | grep -o '[0-9]*%' | head -n1} \
+# Moon Phase
+| ${exec python3 ~/useful_scripts/moon_phase.py} \
 # Date
 |  ${time %a, %d %b} \
 # Time
 |  ${time %H:%M:%S}
+
