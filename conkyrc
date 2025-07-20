@@ -18,17 +18,16 @@ TEXT
 # CPU
 |  ${cpu cpu0}% \
 # RAM
-|  ${mem}/${memmax} \
+|  ${memperc}% \
 # Disk
-|  ${fs_free /}/${fs_size /} \
+|  ${fs_free /} \
 # Volume
 |  ${exec amixer get Master | awk -F'[][]' '/%/ {print $2}' | head -n1} \
 # Microphone
 |  ${exec amixer get Capture | grep -o '[0-9]*%' | head -n1} \
 # Moon Phase
-| ${exec python3 ~/useful_scripts/moon_phase.py} \
+|${exec python3 ~/useful_scripts/moon_phase.py} \
 # Date
 |  ${time %a, %d %b} \
 # Time
 |  ${time %H:%M:%S}
-
