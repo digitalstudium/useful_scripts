@@ -11,8 +11,8 @@ if_up_strictness address
 format_human_readable yes
 
 TEXT
-# Network
- ${if_up wlp3s0}${downspeed wlp3s0}↓ ${upspeed wlp3s0}↑ ${wireless_essid wlp3s0}${else}No WiFi${endif} \
+# Network with IP
+ ${if_up wlp3s0}${downspeed wlp3s0}↓ ${upspeed wlp3s0}↑ ${addr wlp3s0}${else}No WiFi${endif} \
 # Battery
 |   ${battery_percent BAT0}% \
 # CPU
@@ -28,7 +28,7 @@ TEXT
 # Moon Phase
 |${exec python3 ~/useful_scripts/moon_phase.py} \
 # Weather
-|${exec curl -s "wttr.in/Lobnya?format=%t(%h)" 2>/dev/null || echo "N/A"} \
+|${exec curl -s 'wttr.in/svo?M&format=%t+%h+%w' 2>/dev/null || echo "N/A"} \
 # Date
 |  ${time %a, %d %b} \
 # Time
