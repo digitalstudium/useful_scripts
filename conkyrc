@@ -28,7 +28,7 @@ TEXT
 # Moon Phase
 |${exec python3 ~/useful_scripts/moon_phase.py} \
 # Weather
-|${exec curl -s 'wttr.in/svo?M&format=%t+%h+%w' 2>/dev/null || echo "N/A"} \
+|${exec /home/ds/Development/digitalstudium/useful_scripts/weather_cache.sh} \
 # Date
 |  ${time %a, %d %b} \
 # Time
